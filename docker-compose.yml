@@ -1,0 +1,31 @@
+# One-command install: `node tools/setup.js --domain tv.example.com`, then `docker compose up -d`.
+# Caddy in front gets and renews the HTTPS certificate by itself (ports 80 and 443 must reach this machine and the
+# domain must point here). Everything people save lives in the `appdata` volume: back it up (docs/INSTALL.md).
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORT: "8080"
+      TRUST_PROXY: "1"
+    volumes:
+      - appdata:/var/www/stremio-web/data
+    expose:
+      - "8080"
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?run node tools/setup.js first}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+volumes:
+  appdata:
+  caddydata:

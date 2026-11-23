@@ -1,0 +1,39 @@
+--- a/src/constants.rs
++++ b/src/constants.rs
+@@ -100,11 +100,11 @@
+     Url::parse("https://v3-cinemeta.strem.io/manifest.json").expect("CINEMETA_URL parse failed")
+ });
+ pub static USER_LIKES_API_URL: Lazy<Url> =
+-    Lazy::new(|| Url::parse("https://likes.stremio.com").expect("API_URL parse failed"));
++    Lazy::new(|| Url::parse("https://YOUR-HOST/likes/").expect("API_URL parse failed"));
+ pub static API_URL: Lazy<Url> =
+-    Lazy::new(|| Url::parse("https://api.strem.io").expect("API_URL parse failed"));
++    Lazy::new(|| Url::parse("https://YOUR-HOST").expect("API_URL parse failed"));
+ pub static LINK_API_URL: Lazy<Url> =
+-    Lazy::new(|| Url::parse("https://link.stremio.com").expect("LINK_API_URL parse failed"));
++    Lazy::new(|| Url::parse("https://YOUR-HOST").expect("LINK_API_URL parse failed"));
+ pub static STREAMING_SERVER_URL: Lazy<Url> =
+     Lazy::new(|| Url::parse("http://127.0.0.1:11470").expect("STREAMING_SERVER_URL parse failed"));
+ pub static IMDB_URL: Lazy<Url> =
+--- a/src/models/data_export.rs
++++ b/src/models/data_export.rs
+@@ -56,7 +56,7 @@
+                     match result {
+                         Ok(result) => {
+                             let loaded_export_url = format!(
+-                                "https://api.strem.io/data-export/{}/export.json",
++                                "https://YOUR-HOST/data-export/{}/export.json",
+                                 utf8_percent_encode(&result.export_id, URI_COMPONENT_ENCODE_SET)
+                             )
+                             .parse()
+--- a/src/models/ctx/update_trakt_addon.rs
++++ b/src/models/ctx/update_trakt_addon.rs
+@@ -11,7 +11,7 @@
+ 
+ pub fn build_track_addon_url(uid: &UserId) -> Result<Url, url::ParseError> {
+     Url::parse(&format!(
+-        "https://www.strem.io/trakt/addon/{}/manifest.json",
++        "https://YOUR-HOST/trakt/addon/{}/manifest.json",
+         utf8_percent_encode(uid.as_ref(), URI_COMPONENT_ENCODE_SET)
+     ))
+ }

@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Operator</title>
+<style>
+  body { font: 14px/1.5 system-ui, sans-serif; margin: 0; padding: 1rem; background: #0c0b11; color: #eee; }
+  h1 { font-size: 1.2rem; } h2 { font-size: 1rem; margin-top: 2rem; } h3 { font-size: .9rem; margin: 1.2rem 0 .3rem; }
+  input, button, select { font: inherit; padding: .4rem .6rem; border-radius: 6px; border: 1px solid #444; background: #1b1a22; color: inherit; }
+  button { cursor: pointer; } button:disabled { opacity: .5; cursor: default; }
+  table { width: 100%; border-collapse: collapse; } th, td { text-align: left; padding: .35rem .5rem; border-bottom: 1px solid #2a2933; word-break: break-all; }
+  .row { display: flex; gap: .5rem; flex-wrap: wrap; margin: .5rem 0; } .row input { flex: 1; min-width: 12rem; }
+  table.health td { word-break: normal; overflow-wrap: anywhere; } table.health td:nth-child(1), table.health td:nth-child(3) { white-space: nowrap; }
+  .health-ok td:nth-child(3) { color: #6fdc8c; } .health-warn td:nth-child(3) { color: #f0c05a; } .health-fail td:nth-child(3) { color: #ff7a7a; font-weight: 600; } .health-off td:nth-child(3) { opacity: .6; }
+  .muted { opacity: .6; } .error { color: #ff7a7a; }
+  body { padding: 0; }
+  .top { display: flex; align-items: center; gap: 1rem; padding: .6rem 1rem; border-bottom: 1px solid #2a2933; position: sticky; top: 0; background: #0c0b11; z-index: 2; }
+  .tokenrow { margin: 0; flex: 1; justify-content: flex-end; flex-wrap: nowrap; } .tokenrow input { max-width: 24rem; }
+  .layout { display: flex; align-items: flex-start; max-width: 80rem; margin: 0 auto; }
+  nav#nav { position: sticky; top: 3.4rem; width: 12.5rem; flex: none; padding: 1rem .5rem; display: flex; flex-direction: column; gap: .15rem; }
+  nav#nav a { color: inherit; text-decoration: none; padding: .45rem .7rem; border-radius: 6px; opacity: .75; display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
+  nav#nav a:hover { background: #1b1a22; opacity: 1; } nav#nav a[aria-current=page] { background: #2a2650; opacity: 1; font-weight: 600; }
+  .dot { width: .6rem; height: .6rem; border-radius: 50%; background: #6fdc8c; } .dot.warn { background: #f0c05a; } .dot.fail { background: #ff7a7a; }
+  main { flex: 1; min-width: 0; padding: 0 1rem 3rem; }
+  #status { padding-top: .6rem; min-height: 1.4rem; }
+  .page-title { font-size: 1.3rem; margin: 1rem 0 .5rem; } .page[hidden] { display: none; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: .6rem; margin: .5rem 0 1rem; }
+  .tile { background: #1b1a22; border: 1px solid #2a2933; border-radius: 8px; padding: .7rem .9rem; } .tile b { display: block; font-size: 1.5rem; } .tile span { opacity: .65; font-size: .8rem; }
+  .jump { position: relative; flex: 0 1 22rem; } .jump input { width: 100%; box-sizing: border-box; }
+  #jumpResults { position: absolute; left: 0; right: 0; top: 2.4rem; background: #1b1a22; border: 1px solid #444; border-radius: 8px; overflow: hidden; z-index: 5; } #jumpResults[hidden] { display: none; }
+  #jumpResults a { display: block; padding: .45rem .7rem; color: inherit; text-decoration: none; } #jumpResults a:hover, #jumpResults a.active { background: #2a2650; } #jumpResults small { opacity: .6; margin-left: .5rem; }
+  .brand-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: .8rem; margin-top: .6rem; }
+  .brand-card { background: #1b1a22; border: 1px solid #2a2933; border-radius: 8px; padding: .8rem; display: flex; flex-direction: column; gap: .5rem; }
+  .brand-card .preview { background: #0c0b11; border-radius: 6px; height: 7rem; display: flex; align-items: center; justify-content: center; } .brand-card .preview img { max-width: 90%; max-height: 90%; object-fit: contain; }
+  .chart { background: #1b1a22; border: 1px solid #2a2933; border-radius: 8px; padding: .6rem; } .chart svg { width: 100%; height: auto; max-height: 14rem; display: block; } .chart text { fill: #aaa; font-size: 7px; }
+  .page a { color: #9d8cff; } .tile b.long { font-size: 1.05rem; line-height: 1.6; }
+  .funnel { background: #1b1a22; border: 1px solid #2a2933; border-radius: 8px; padding: .8rem .9rem; margin: .5rem 0 1rem; }
+  .funnel .step { margin: .5rem 0; } .funnel .step .lab { display: flex; justify-content: space-between; font-size: .85rem; margin-bottom: .25rem; } .funnel .step .lab span { opacity: .65; }
+  .funnel .bar { height: .7rem; border-radius: 4px; background: #2a2933; overflow: hidden; } .funnel .bar i { display: block; height: 100%; border-radius: 4px; }
+  .funnel .conv { margin-top: .7rem; font-size: .95rem; } .funnel .conv b { font-size: 1.4rem; }
+  .funnel .empty { opacity: .6; font-size: .85rem; }
+  .tile a, .page .tile a { color: inherit; text-decoration: none; display: block; }
+  @media (max-width: 800px) {
+    .layout { flex-direction: column; } nav#nav { position: static; width: auto; flex-direction: row; overflow-x: auto; padding: .5rem; }
+    nav#nav a { white-space: nowrap; } .top { flex-wrap: wrap; } .tokenrow { justify-content: flex-start; flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <strong>Operator</strong>
+  <div class="jump"><input id="jump" type="search" placeholder="Jump to a person or page  ( / )" autocomplete="off" aria-label="Jump to a person or page" aria-controls="jumpResults"><div id="jumpResults" role="listbox" hidden></div></div>
+  <div class="row tokenrow">
+    <input id="token" type="password" placeholder="ADMIN_TOKEN (kept in this tab only)" autocomplete="off">
+    <button id="load">Load</button>
+  </div>
+</header>
+<div class="layout">
+  <nav id="nav" aria-label="Operator sections">
+      <a href="#/overview" data-nav="overview">Overview<span class="dot" id="dot-overview" hidden></span></a>
+      <a href="#/people" data-nav="people">People<span class="dot" id="dot-people" hidden></span></a>
+      <a href="#/subscribers" data-nav="subscribers">Subscribers<span class="dot" id="dot-subscribers" hidden></span></a>
+      <a href="#/plans" data-nav="plans">Plans<span class="dot" id="dot-plans" hidden></span></a>
+      <a href="#/payments" data-nav="payments">Payments<span class="dot" id="dot-payments" hidden></span></a>
+      <a href="#/settings" data-nav="settings">Settings<span class="dot" id="dot-settings" hidden></span></a>
+      <a href="#/statistics" data-nav="statistics">Statistics<span class="dot" id="dot-statistics" hidden></span></a>
+      <a href="#/content" data-nav="content">Content and playback<span class="dot" id="dot-content" hidden></span></a>
+      <a href="#/activity" data-nav="activity">Activity<span class="dot" id="dot-activity" hidden></span></a>
+  </nav>
+  <main>
+  <div id="status" class="muted" role="status"></div>
+  <section class="page" id="page-overview" data-page="overview" hidden>
+  <h1 class="page-title">Overview</h1>
+  <div id="tiles" class="tiles"></div>
+  <h2>Health and setup</h2>
+  <div id="healthSummary" class="muted">–</div>
+  <table class="health"><thead><tr><th></th><th>Check</th><th>Status</th><th>What to do</th></tr></thead><tbody id="health"></tbody></table>
+
+  <h2>Latest activity</h2>
+  <table><tbody id="auditShort"></tbody></table>
+  </section>
+  <section class="page" id="page-people" data-page="people" hidden>
+  <h1 class="page-title">People</h1>
+  <h2>Online now</h2>
+  <div id="online" class="muted">–</div>
+  <div class="row">
+    <input id="userSearch" type="search" placeholder="Search people by email" autocomplete="off">
+    <button id="userPrev" disabled>Previous</button>
+    <button id="userNext" disabled>Next</button>
+  </div>
+  <div id="userPage" class="muted"></div>
+  <table><thead><tr><th>Email</th><th>Last seen</th><th>Logins</th><th></th><th></th><th></th></tr></thead><tbody id="users"></tbody></table>
+
+  <h2>Blocked accounts</h2>
+  <div class="row"><input id="banEmail" type="email" placeholder="email"><input id="banNote" placeholder="reason (optional)"><button id="ban">Block</button></div>
+  <table><tbody id="banned"></tbody></table>
+
+  </section>
+  <section class="page" id="page-subscribers" data-page="subscribers" hidden>
+  <h1 class="page-title">Subscribers</h1>
+  <h2>Subscribers</h2>
+  <table><thead><tr><th>Email</th><th>Plan</th><th>Status</th><th>Renews/ends</th><th>Invited</th><th></th></tr></thead><tbody id="owners"></tbody></table>
+
+  <h2>Complimentary access</h2>
+  <div class="row"><input id="grantEmail" type="email" placeholder="email"><input id="grantNote" placeholder="note (optional)"><button id="grant">Grant</button></div>
+  <table><tbody id="grants"></tbody></table>
+  </section>
+  <section class="page" id="page-plans" data-page="plans" hidden>
+  <h1 class="page-title">Plans</h1>
+  <div class="muted">Archived plans stay valid for people already subscribed. The Stripe price id cannot change after creating a plan: create a new plan instead.</div>
+  <table><thead><tr><th>Plan</th><th>Price shown</th><th>Shared seats</th><th>Stripe price</th><th>Status</th><th></th><th></th></tr></thead><tbody id="plans"></tbody></table>
+  <div class="row">
+    <input id="planId" placeholder="id (e.g. family)" style="max-width:10rem" maxlength="40">
+    <input id="planName" placeholder="name" maxlength="40">
+    <input id="planPrice" placeholder="price shown (e.g. $9 / month)" maxlength="40">
+    <input id="planSeats" type="number" min="0" max="50" value="0" style="max-width:6rem" title="shared seats">
+  </div>
+  <div class="row">
+    <input id="planDescription" placeholder="short description" maxlength="200">
+    <input id="planStripe" placeholder="Stripe price id (price_...)" maxlength="110">
+    <button id="planSave">Save plan</button>
+  </div>
+  <div class="row" id="priceRow" hidden>
+    <span class="muted" style="align-self:center">No Stripe price yet? Create one here:</span>
+    <input id="priceAmount" type="number" min="0" step="0.01" placeholder="amount (e.g. 9.99)" style="max-width:10rem">
+    <input id="priceCurrency" placeholder="currency" value="usd" maxlength="3" style="max-width:5rem">
+    <select id="priceInterval"><option value="month">per month</option><option value="year">per year</option></select>
+    <button id="priceCreate">Create price in Stripe</button>
+  </div>
+
+  </section>
+  <section class="page" id="page-payments" data-page="payments" hidden>
+  <h1 class="page-title">Payments</h1>
+  <div class="muted">Enter your Stripe secret key and webhook signing secret. They are stored on the server, never sent back to browsers (only a masked hint is shown), and take effect at once — no restart. In Stripe, set the webhook endpoint to <b>PUBLIC_URL/billing/webhook</b>. Once set, “Pay on web” in the app opens Stripe Checkout and a completed payment unlocks the account automatically.</div>
+  <div class="row">
+    <label style="min-width:14rem">Stripe secret key</label>
+    <input id="payStripe" type="password" placeholder="sk_test_… or sk_live_…" autocomplete="off" style="flex:1">
+    <span id="payStripeHint" class="muted"></span>
+  </div>
+  <div class="row">
+    <label style="min-width:14rem">Webhook signing secret</label>
+    <input id="payWebhook" type="password" placeholder="whsec_…" autocomplete="off" style="flex:1">
+    <span id="payWebhookHint" class="muted"></span>
+  </div>
+  <div class="row"><button id="paySave">Save payment keys</button><button id="payClear">Clear keys</button></div>
+  <div class="muted">Leave a field blank to keep the saved value. Clearing falls back to the environment (STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET), if set.</div>
+  </section>
+  <section class="page" id="page-settings" data-page="settings" hidden>
+  <h1 class="page-title">Settings</h1>
+  <div id="settings"></div>
+  <h2>Logo and icons</h2>
+  <div class="muted">Replace the stock images. Until you upload one, the standard image stays. Changes show on the next page load.</div>
+  <div id="brand" class="brand-grid"></div>
+
+  </section>
+  <section class="page" id="page-statistics" data-page="statistics" hidden>
+  <h1 class="page-title">Statistics</h1>
+  
+  <div id="statsTiles" class="tiles"></div>
+  <div id="statsTotals" class="muted">–</div>
+  <h3>Upgrade funnel</h3>
+  <div id="statsUpgrade" class="funnel">–</div>
+  <h3>Active people per day</h3>
+  <div id="statsChart" class="chart" role="img" aria-label="Bar chart of active people per day"></div>
+  <div id="statsActiveTrend" class="muted">–</div>
+  <h3>Last 14 days</h3>
+  <table><thead><tr><th>Day</th><th>New users</th><th>Logins</th><th>Active</th><th>Watching</th><th>Hours</th></tr></thead><tbody id="statsDaily"></tbody></table>
+  <h3>Paying or sharing users who stopped showing up (14+ days)</h3>
+  <table><thead><tr><th>Email</th><th>Plan role</th><th>Last seen</th><th>Logins</th></tr></thead><tbody id="statsRisk"></tbody></table>
+  <h3>Signed in but never watched (over a day ago)</h3>
+  <table><thead><tr><th>Email</th><th>First seen</th><th>Last seen</th><th>Logins</th></tr></thead><tbody id="statsBounce"></tbody></table>
+  <h3>Devices and languages (people, latest sign-in)</h3>
+  <div id="statsDevices" class="muted">–</div>
+  <h3>Watching by hour of day (your local time)</h3>
+  <div id="statsHours" class="muted">–</div>
+
+  </section>
+  <section class="page" id="page-content" data-page="content" hidden>
+  <h1 class="page-title">Content and playback</h1>
+  <h3>Top content</h3>
+  <table><thead><tr><th>Title</th><th>Type</th><th>Hours</th><th>Plays</th><th>Finished</th><th>Errors</th></tr></thead><tbody id="statsContent"></tbody></table>
+  <h3>Top viewers</h3>
+  <table><thead><tr><th>Email</th><th>Hours</th><th>Plays</th><th>Last watched</th></tr></thead><tbody id="statsViewers"></tbody></table>
+  <h3>Playback quality</h3>
+  <div id="statsPlayback" class="muted">–</div>
+  <h3>Add-ons serving streams (by plays)</h3>
+  <table><thead><tr><th>Add-on host</th><th>Plays</th><th>Hours</th><th>Errors</th><th>Errors per 100 plays</th></tr></thead><tbody id="statsAddons"></tbody></table>
+  </section>
+  <section class="page" id="page-activity" data-page="activity" hidden>
+  <h1 class="page-title">Activity</h1>
+  <table><tbody id="audit"></tbody></table>
+  </section>
+    <section class="page" id="page-person" data-page="person" hidden>
+  <p><a href="#/people">&larr; All people</a></p>
+  <h1 class="page-title" id="personTitle">Person</h1>
+  <div id="personFlags" class="muted"></div>
+  <div id="personTiles" class="tiles"></div>
+  <h2>Access</h2>
+  <div id="personAccess" class="muted">–</div>
+  <h2>Note</h2>
+  <div class="muted">Only operators see this. It is included when the person asks for their data and deleted when they are erased.</div>
+  <div class="row"><textarea id="personNote" rows="3" maxlength="500" placeholder="e.g. paid by bank transfer; asked for an invoice" style="flex:1;min-width:14rem;font:inherit;background:#1b1a22;color:inherit;border:1px solid #444;border-radius:6px;padding:.4rem .6rem"></textarea><button id="personNoteSave">Save note</button></div>
+  <div id="personAccountBox" hidden>
+  <h2>Account on our service</h2>
+  <div id="personAccount" class="muted">–</div>
+  <div class="row" id="personAccountActions"></div>
+  </div>
+  <h2>Actions</h2>
+  <div class="row" id="personActions"></div>
+  <h2>Recent sign-ins</h2>
+  <div id="personLogins" class="muted">–</div>
+  <h2>History in the audit log</h2>
+  <table><tbody id="personAudit"></tbody></table>
+  </section>
+  </main>
+</div>
+<script src="operator.js"></script>
+</body>
+</html>

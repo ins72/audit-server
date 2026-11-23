@@ -1,0 +1,57 @@
+.invite {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    padding: 0.75rem 1.25rem;
+
+    .email {
+        flex: 1 1 12rem;
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        color: var(--primary-foreground-color);
+    }
+
+    .state {
+        flex: none;
+        font-size: 0.9rem;
+        color: var(--primary-foreground-color);
+        opacity: 0.6;
+    }
+}
+
+.add {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.25rem;
+
+    .input {
+        flex: 1;
+        min-width: 0;
+        background-color: var(--overlay-color);
+        border-radius: var(--border-radius);
+        color: var(--primary-foreground-color);
+        padding: 0.5rem 0.75rem;
+        border: 1px solid transparent;
+
+        &:focus {
+            border: 1px solid var(--primary-foreground-color);
+        }
+    }
+}
+
+.message {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    color: var(--primary-foreground-color);
+    opacity: 0.8;
+
+    &.error {
+        opacity: 1;
+        color: var(--danger-accent-color);
+    }
+}
