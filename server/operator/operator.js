@@ -162,7 +162,7 @@
     });
 
     // Pages: one section visible at a time, chosen by the address (#/people), so every page can be bookmarked and the back button works.
-    const PAGES = ['overview', 'people', 'subscribers', 'plans', 'payments', 'settings', 'statistics', 'content', 'activity', 'person'];
+    const PAGES = ['overview', 'people', 'subscribers', 'plans', 'payments', 'settings', 'addons', 'statistics', 'content', 'activity', 'person'];
     let latest = null; // last data loaded, so the person page can be drawn without asking for everything again
     const showPage = (scroll = true) => {
         const match = window.location.hash.match(/^#\/(\w+)(?:\/(.+))?/) || [];
@@ -300,7 +300,7 @@
     };
 
     // Jump box in the header: type part of an email or a page name; Enter opens the first match; "/" focuses the box.
-    const PAGE_NAMES = { overview: 'Overview', people: 'People', subscribers: 'Subscribers', plans: 'Plans', payments: 'Payments', settings: 'Settings', statistics: 'Statistics', content: 'Content and playback', activity: 'Activity' };
+    const PAGE_NAMES = { overview: 'Overview', people: 'People', subscribers: 'Subscribers', plans: 'Plans', payments: 'Payments', settings: 'Settings', addons: 'Add-ons', statistics: 'Statistics', content: 'Content and playback', activity: 'Activity' };
     let jumpTimer = null;
     let jumpSeq = 0;
     const closeJump = () => { $('jumpResults').hidden = true; $('jumpResults').replaceChildren(); };
@@ -373,6 +373,79 @@
 
     const PAGE = 100;
     let userOffset = 0;
+
+    // Built-in add-on toggles: moviebox2 / houseofmaster yes/no. Hidden add-on list: manifest URLs with remove buttons.
+    const renderAddons = (cfg) => {
+        const builtin = document.createElement('div');
+        const addToggle = (id, label, enabled, hint) => {
+            const row = document.createElement('div');
+            row.className = 'row';
+            const labelEl = document.createElement('label');
+            labelEl.textContent = label;
+            labelEl.style.minWidth = '14rem';
+            const select = document.createElement('select');
+            select.dataset.id = id;
+            const on = document.createElement('option'); on.value = 'true'; on.textContent = 'yes';
+            const off = document.createElement('option'); off.value = 'false'; off.textContent = 'no';
+            select.append(on, off);
+            select.value = enabled ? 'true' : 'false';
+            select.addEventListener('change', async () => {
+                select.disabled = true;
+                try {
+                    const patch = { [`enable${id.charAt(0).toUpperCase()}${id.slice(1)}`]: select.value === 'true' };
+                    await api('/admin/addons', patch, 'PUT');
+                    await load();
+                } catch (e) { status(e.message, true); select.disabled = false; }
+            });
+            const hintEl = document.createElement('span');
+            hintEl.className = 'muted';
+            hintEl.textContent = hint;
+            row.append(labelEl, select, hintEl);
+            return row;
+        };
+        builtin.appendChild(addToggle('moviebox2', 'Moviebox2', cfg.addons.enableMoviebox2, 'moviebox2.mewayz.com built-in source'));
+        builtin.appendChild(addToggle('houseofmaster', 'House of Master', cfg.addons.enableHouseofmaster, 'stremio.thehouseofthemaster.pt built-in source'));
+        $('builtinAddons').replaceChildren(builtin);
+
+        // Hidden add-ons: list with remove, plus an add field.
+        const hidden = document.createElement('div');
+        const rows = cfg.hidden.map((entry) => {
+            const tr = document.createElement('tr');
+            cell(tr, entry.id);
+            cell(tr, entry.transportUrl);
+            action(tr, 'Remove', async () => {
+                if (!window.confirm(`Remove hidden add-on ${entry.id}?`)) return;
+                const urls = cfg.hidden.map((e) => e.transportUrl).filter((u) => u !== entry.transportUrl);
+                try {
+                    await api('/admin/addons', { hiddenAddonUrls: urls.join('\n') }, 'PUT');
+                    await load();
+                } catch (e) { status(e.message, true); }
+            });
+            return tr;
+        });
+        hidden.replaceChildren(...rows);
+        // Add a header row
+        const thead = document.createElement('thead');
+        const trh = document.createElement('tr');
+        cell(trh, 'Id'); cell(trh, 'Manifest URL'); cell(trh, '');
+        thead.appendChild(trh);
+        const table = document.createElement('table');
+        table.appendChild(thead);
+        if (rows.length > 0) { const tbody = document.createElement('tbody'); rows.forEach((r) => tbody.appendChild(r)); table.appendChild(tbody); }
+        $('hiddenAddons').replaceChildren(table);
+        $('hiddenAddonAdd').addEventListener('click', async () => {
+            const url = $('hiddenAddonUrl').value.trim();
+            if (!url) { status('Enter a manifest URL first', true); return; }
+            const existing = cfg.hidden.map((e) => e.transportUrl);
+            if (existing.includes(url)) { status('That manifest is already hidden', true); return; }
+            const urls = [...existing, url];
+            try {
+                await api('/admin/addons', { hiddenAddonUrls: urls.join('\n') }, 'PUT');
+                $('hiddenAddonUrl').value = '';
+                status('Hidden add-on added'); await load();
+            } catch (e) { status(e.message, true); }
+        });
+    };
     const renderUserPage = (sessions) => {
         const from = sessions.matched === 0 ? 0 : sessions.offset + 1;
         const to = Math.min(sessions.offset + sessions.limit, sessions.matched);
@@ -406,12 +479,13 @@
     const load = async () => {
         status('Loading…');
         try {
-            const [sessions, billing, log, stats, config, planList, payments, healthReport, brandStatus] = await Promise.all([api(`/admin/sessions?limit=${PAGE}&offset=${userOffset}&q=${encodeURIComponent($('userSearch').value.trim())}`), api('/admin/billing'), api('/admin/audit'), api('/admin/stats?days=14&fresh=1'), api('/admin/settings'), api('/admin/plans'), api('/admin/payments'), api('/admin/health'), api('/admin/brand')]);
+            const [sessions, billing, log, stats, config, planList, payments, healthReport, brandStatus, addonsCfg] = await Promise.all([api(`/admin/sessions?limit=${PAGE}&offset=${userOffset}&q=${encodeURIComponent($('userSearch').value.trim())}`), api('/admin/billing'), api('/admin/audit'), api('/admin/stats?days=14&fresh=1'), api('/admin/settings'), api('/admin/plans'), api('/admin/payments'), api('/admin/health'), api('/admin/brand'), api('/admin/addons')]);
             renderHealth(healthReport);
             renderBrand(brandStatus);
             renderSettings(config);
             renderPayments(payments);
             renderPlans(planList.plans);
+            renderAddons(addonsCfg);
             $('priceRow').hidden = !planList.canCreatePrice;
             try { sessionStorage.setItem('operatorToken', token); } catch (_e) { /* ignore */ }
             $('online').textContent = `${sessions.online} online of ${sessions.total} users`;

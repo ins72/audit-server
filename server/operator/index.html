@@ -65,6 +65,7 @@
       <a href="#/plans" data-nav="plans">Plans<span class="dot" id="dot-plans" hidden></span></a>
       <a href="#/payments" data-nav="payments">Payments<span class="dot" id="dot-payments" hidden></span></a>
       <a href="#/settings" data-nav="settings">Settings<span class="dot" id="dot-settings" hidden></span></a>
+      <a href="#/addons" data-nav="addons">Add-ons<span class="dot" id="dot-addons" hidden></span></a>
       <a href="#/statistics" data-nav="statistics">Statistics<span class="dot" id="dot-statistics" hidden></span></a>
       <a href="#/content" data-nav="content">Content and playback<span class="dot" id="dot-content" hidden></span></a>
       <a href="#/activity" data-nav="activity">Activity<span class="dot" id="dot-activity" hidden></span></a>
@@ -154,6 +155,19 @@
   <div class="muted">Replace the stock images. Until you upload one, the standard image stays. Changes show on the next page load.</div>
   <div id="brand" class="brand-grid"></div>
 
+  </section>
+  <section class="page" id="page-addons" data-page="addons" hidden>
+  <h1 class="page-title">Add-ons</h1>
+  <div class="muted">Toggle built-in sources on/off, and add hidden add-ons (Stremio manifests) that serve streams but never appear in the viewer's source list. Changes take effect on the next app launch.</div>
+  <h2>Built-in sources</h2>
+  <div id="builtinAddons" class="muted">Loading…</div>
+  <h2>Hidden add-ons</h2>
+  <div class="muted">Each is a Stremio manifest.json address. They provide streams but stay hidden from viewers.</div>
+  <div id="hiddenAddons" class="muted">Loading…</div>
+  <div class="row">
+    <input id="hiddenAddonUrl" type="url" placeholder="https://example.com/manifest.json" style="flex:1;min-width:20rem">
+    <button id="hiddenAddonAdd">Add hidden add-on</button>
+  </div>
   </section>
   <section class="page" id="page-statistics" data-page="statistics" hidden>
   <h1 class="page-title">Statistics</h1>

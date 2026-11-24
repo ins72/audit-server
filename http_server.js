@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+require('dotenv').config();
+
 // Copyright (C) 2017-2023 Smart code 203358507
 
 const ASSETS_CACHE = 2629744;
@@ -20,6 +22,7 @@ const { createBilling } = require('./server/billing');
 const { createSecrets } = require('./server/secrets');
 const { createAudit } = require('./server/audit');
 const { createSettings } = require('./server/settings');
+const { createAddons } = require('./server/addons');
 const { createBrand, renderIndex, renderManifest } = require('./server/brand');
 const { createPlans } = require('./server/plans');
 const { createTtlCache } = require('./server/ttlCache');
@@ -111,6 +114,11 @@ const planStore = createPlans({
 const settings = createSettings({
     dataFile: process.env.SETTINGS_FILE || path.resolve(__dirname, 'data', 'settings.json'),
     defaults: { supportEmail: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(process.env.SUPPORT_EMAIL || '') ? process.env.SUPPORT_EMAIL : '' },
+    audit
+});
+const addons = createAddons({
+    dataFile: process.env.ADDONS_FILE || path.resolve(__dirname, 'data', 'addons.json'),
+    defaults: { enableMoviebox2: 'false', enableHouseofmaster: 'true', hiddenAddonUrls: '' },
     audit
 });
 
@@ -344,7 +352,8 @@ if (stripeMock) {
         res.end(page(plan, userId));
     });
 }
-app.use('/config', settings.publicRouter);
+app.get('/config', (_req, res) => res.set('cache-control', 'no-store')
+    .json({ ...configFor(settings.get()), settings: settings.publicConfig(), addons: addons.publicConfig() }));
 const brand = createBrand({ dir: process.env.BRAND_DIR || path.resolve(__dirname, 'data', 'brand'), audit });
 app.use('/admin/brand', brand.adminRouter(auth.adminGuard));
 // Paywall status for account-key clients (Alder, mobile): they have no cookie session, so the signed-in identity comes
@@ -487,11 +496,6 @@ if (accounts) {
     app.use('/likes', accounts.ratingsRouter);
     app.use('/v2', accounts.linkRouter);
     app.use('/data-export', accounts.exportRouter);
-    // Remote config (announcement + operator branding): the app asks for it as GET /config on the account service
-    // address. Notifications are Stremio's shape; the operator's public settings ride along under "settings" so the
-    // app can show the configured product name instead of a hardcoded one.
-    app.get('/config', (_req, res) => res.set('cache-control', 'no-store')
-        .json({ ...configFor(settings.get()), settings: settings.publicConfig() }));
     app.use('/admin/accounts', accounts.adminRouter(auth.adminGuard));
     // Trakt (optional): needs a Trakt API app, see docs/ACCOUNTS_API.md
     trakt = createTrakt({ api: process.env.TRAKT_API_URL || undefined, site: process.env.TRAKT_SITE_URL || undefined, clientId: process.env.TRAKT_CLIENT_ID || '', clientSecret: process.env.TRAKT_CLIENT_SECRET || '', publicUrl: publicOrigin || '', accounts, productName: () => settings.get().productName });
@@ -518,6 +522,7 @@ p{color:#a9a8b3;line-height:1.5;word-break:break-all}a{display:block;text-align:
 app.use('/admin/settings', settings.adminRouter(auth.adminGuard));
 app.use('/admin/plans', planStore.adminRouter(auth.adminGuard));
 app.use('/admin/payments', secrets.adminRouter(auth.adminGuard));
+app.use('/admin/addons', addons.adminRouter(auth.adminGuard));
 app.use('/admin', auth.admin);
 app.use('/admin', billing.admin);
 // One person: profile fields, recent sign-in times and watch totals
